@@ -1,0 +1,20 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "feature-workflow-marketplace",
+  "description": "End-to-end feature development workflow with Clean Architecture. Works on both new and existing codebases. Supports web (React/Next.js), backend (Node/Express), and mobile (Flutter/Dart) with token-efficient cached analysis.",
+  "owner": {
+    "name": "akef"
+  },
+  "plugins": [
+    {
+      "name": "feature-workflow",
+      "description": "End-to-end feature development workflow with Clean Architecture. Works on both new and existing codebases. Supports React/Next.js web, Node/Express backend, and Flutter/Dart mobile. Includes intelligent codebase analysis, cached project understanding, Flutter state management (BLoC/Riverpod/Provider), safe legacy development, multi-database support, infrastructure setup, multi-target deployment (web + mobile app stores), product management, team coordination, and session continuity.",
+      "version": "0.5.0",
+      "author": {
+        "name": "akef"
+      },
+      "source": "./plugins/feature-workflow",
+      "category": "development"
+    }
+  ]
+}

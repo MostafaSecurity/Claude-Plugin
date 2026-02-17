@@ -1,0 +1,9 @@
+{
+  "name": "feature-workflow",
+  "version": "0.5.0",
+  "description": "End-to-end feature development workflow with Clean Architecture. Works on both new and existing codebases. Supports React/Next.js web, Node/Express backend, and Flutter/Dart mobile. Includes intelligent codebase analysis, cached project understanding, token-efficient incremental scanning, safe legacy development, multi-database support, Flutter state management (BLoC/Riverpod/Provider), infrastructure setup, credential management, multi-target deployment (web + mobile app stores), product management, team coordination, and session continuity.",
+  "author": {
+    "name": "akef"
+  },
+  "keywords": ["clean-architecture", "react", "node", "express", "flutter", "dart", "bloc", "riverpod", "mobile", "workflow", "tdd", "deployment", "product-management", "team", "agents", "infrastructure", "devops", "prisma", "mongodb", "postgresql", "vercel", "gcp", "legacy", "codebase-analysis", "incremental", "token-efficient"]
+}
