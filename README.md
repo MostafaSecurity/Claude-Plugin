@@ -138,7 +138,7 @@ This repo is structured as a Claude Code **marketplace**. Installation is two co
 
 ```bash
 # Register the marketplace
-claude plugin marketplace add MostafaSecurity/Claude-Plugin/feature-workflow
+claude plugin marketplace add MostafaSecurity/Claude-Plugin
 
 # Install the plugin (globally)
 claude plugin install --scope user feature-workflow
@@ -561,7 +561,7 @@ Skills are designed to work together:
 Restart Claude Code (`claude`) after installing the plugin.
 
 **"not found in any configured marketplace" during install:**
-You must register the marketplace first. Run `claude plugin marketplace add MostafaSecurity/Claude-Plugin/feature-workflow` before `claude plugin install`.
+You must register the marketplace first. Run `claude plugin marketplace add MostafaSecurity/Claude-Plugin` before `claude plugin install`.
 
 **"/resume says no .product/ directory":**
 Run `/init-project` first to set up the project infrastructure.
