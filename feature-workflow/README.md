@@ -137,14 +137,12 @@ You'll be prompted to sign in with your Anthropic account. You need a **Max plan
 This repo is structured as a Claude Code **marketplace**. Installation is two commands:
 
 ```bash
-# Register the marketplace (from inBots Organization repo)
-claude plugin marketplace add inBots-Organization/feature-workflow
+# Register the marketplace
+claude plugin marketplace add MostafaSecurity/Claude-Plugin/feature-workflow
 
 # Install the plugin (globally)
 claude plugin install --scope user feature-workflow
 ```
-
-> **Note:** You must have access to the [inBots-Organization/feature-workflow](https://github.com/inBots-Organization/feature-workflow) GitHub repo. Ask your team lead for access if needed.
 
 After installation, **restart Claude Code** for the new skills to become available.
 
@@ -563,10 +561,7 @@ Skills are designed to work together:
 Restart Claude Code (`claude`) after installing the plugin.
 
 **"not found in any configured marketplace" during install:**
-You must register the marketplace first. Run `claude plugin marketplace add inBots-Organization/feature-workflow` before `claude plugin install`.
-
-**"Permission denied" or "Repository not found" during marketplace add:**
-You need access to the inBots Organization GitHub repo. Ask your team lead to add you to [inBots-Organization/feature-workflow](https://github.com/inBots-Organization/feature-workflow).
+You must register the marketplace first. Run `claude plugin marketplace add MostafaSecurity/Claude-Plugin/feature-workflow` before `claude plugin install`.
 
 **"/resume says no .product/ directory":**
 Run `/init-project` first to set up the project infrastructure.
