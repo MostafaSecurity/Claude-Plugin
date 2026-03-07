@@ -5,5 +5,5 @@
   "author": {
     "name": "akef"
   },
-  "keywords": ["clean-architecture", "react", "node", "express", "flutter", "dart", "bloc", "riverpod", "mobile", "workflow", "tdd", "deployment", "product-management", "team", "agents", "infrastructure", "devops", "prisma", "mongodb", "postgresql", "vercel", "gcp", "legacy", "codebase-analysis", "incremental", "token-efficient"]
+  "keywords": ["clean-architecture", "react", "node", "express", "flutter", "dart", "bloc", "riverpod", "mobile", "workflow", "tdd", "deployment", "product-management", "team", "agents", "infrastructure", "devops", "prisma", "mongodb", "postgresql", "vercel", "gcp", "legacy", "codebase-analysis", "incremental", "token-efficient", "code-review", "coderabbit"]
 }
