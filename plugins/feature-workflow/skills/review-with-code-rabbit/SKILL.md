@@ -1,112 +1,59 @@
 ---
 name: review-with-code-rabbit
-description: This skill should be used when the user asks to "review code", "code rabbit review", "coderabbit review", "review with code rabbit", "review my changes", "AI code review", "review latest changes", "check my code", or wants to run an AI-powered code review using CodeRabbit on their latest changes. It handles CLI setup, authentication, smart change detection, and tracks reviewed state so only new changes are reviewed each time. Works on Windows, macOS, and Linux.
-version: 0.2.0
+description: This skill should be used when the user asks to "review code", "code rabbit review", "coderabbit review", "review with code rabbit", "review my changes", "AI code review", "review latest changes", "check my code", or wants an AI-powered code review on their latest changes. Works on all platforms. Tracks reviewed state so only new changes are reviewed each time.
+version: 0.3.0
 ---
 
-# Review with CodeRabbit — AI-Powered Code Review (Cross-Platform)
+# Review with CodeRabbit — AI Code Review
 
-Run AI code reviews on your latest changes. Works on **all platforms** (Windows, macOS, Linux). Uses CodeRabbit CLI where available, falls back to Claude direct review on unsupported platforms.
-
-## How It Works
-
-This skill has two review paths:
-
-| Platform | CodeRabbit CLI | Review Method |
-|----------|---------------|---------------|
-| **macOS** | ✅ Available | Path A: CodeRabbit CLI |
-| **Linux** | ✅ Available | Path A: CodeRabbit CLI |
-| **Windows** | ❌ Not available | Path B: Claude Direct Review |
-| **Any OS** (CLI not installed) | ❌ Not installed | Path B: Claude Direct Review |
-
-Both paths produce structured review output and update the tracking file (`.product/coderabbit-reviews.md`).
+Review code changes directly using Claude. Works on all platforms (Windows, macOS, Linux). Tracks what has been reviewed so only new changes get reviewed each time.
 
 ## Process
 
-### Step 1: Run the Helper Script
+### Step 1: Collect Changes
 
-The cross-platform helper script handles platform detection, git diff collection, and tracking.
-
-```bash
-node <plugin-path>/skills/review-with-code-rabbit/references/cr-review.mjs
-```
-
-**To find the plugin path**, check where the skill is installed:
+Detect what needs to be reviewed:
 
 ```bash
-# The script is bundled with this skill at:
-# <marketplace-path>/plugins/feature-workflow/skills/review-with-code-rabbit/references/cr-review.mjs
+# Check for uncommitted changes
+git status --porcelain
+
+# Check for unpushed commits
+git log @{u}..HEAD --oneline 2>/dev/null
+
+# Check last reviewed commit from tracking file
+cat .product/coderabbit-reviews.md 2>/dev/null
 ```
 
-Parse each JSON line from the script's output. The script will emit:
+**Decision logic:**
 
-1. `{ phase: "init", os: "win32|darwin|linux", cwd: "..." }` — Platform info
-2. `{ phase: "scope", type: "uncommitted|committed|all|none", description: "..." }` — What will be reviewed
-3. `{ phase: "cli_check", available: true|false, version: "...", os: "..." }` — CodeRabbit CLI status
-4. Then either **Path A** or **Path B** output
+| Priority | Condition | What to diff |
+|----------|-----------|-------------|
+| 1 | Uncommitted + unpushed commits | `git diff @{u}` (everything) |
+| 2 | Uncommitted changes only | `git diff HEAD` |
+| 3 | Unpushed commits only | `git diff @{u}..HEAD` |
+| 4 | Changes since last review | `git diff <last-reviewed-hash>..HEAD` |
+| 5 | First review (no tracking file) | Read key source files directly |
+| 6 | Nothing changed | Tell user "No new changes to review" |
 
-### Step 2: Check Authentication (Path A Only)
-
-If the script reports `cli_check.available = true`, CodeRabbit CLI is available.
-
-**Check if authenticated:**
+### Step 2: Get the Diff
 
 ```bash
-cr auth status
+# Get the diff based on Step 1
+git diff <appropriate range>
+
+# Get stats
+git diff <appropriate range> --stat
+
+# Get list of changed files
+git diff <appropriate range> --name-only
 ```
 
-**If not authenticated**, ask the user:
+If the diff is very large (>100 files), warn the user and suggest reviewing in batches.
 
-> "I need your CodeRabbit API key to run the review. You can get one from https://app.coderabbit.ai/settings
-> Please paste your API key."
+### Step 3: Review the Code
 
-After receiving the key, the user can either:
-
-1. Set it as environment variable (persistent):
-   ```bash
-   # macOS/Linux — add to ~/.bashrc or ~/.zshrc
-   export CODERABBIT_API_KEY="<key>"
-
-   # Windows — add to system environment variables
-   setx CODERABBIT_API_KEY "<key>"
-   ```
-
-2. Or pass it directly to the script:
-   ```bash
-   node cr-review.mjs --api-key <key>
-   ```
-
-**Important:** NEVER store the API key in any project file or commit it to git.
-
-### Step 3A: CodeRabbit CLI Review (macOS/Linux)
-
-If the script output includes `{ phase: "review_result", method: "coderabbit-cli", output: "..." }`:
-
-1. The review was done by CodeRabbit CLI
-2. Present the output to the user, organized by severity:
-   - 🔴 **Critical** — Security vulnerabilities, data loss risks, race conditions
-   - 🟡 **Warning** — Performance issues, potential bugs, bad practices
-   - 🟢 **Suggestion** — Code style, readability improvements, optimizations
-3. Include file paths and line numbers
-4. The tracking file was already updated by the script
-
-### Step 3B: Claude Direct Review (Windows / No CLI)
-
-If the script output includes `{ phase: "review_data", method: "claude-direct", diff: "...", ... }`:
-
-1. The CodeRabbit CLI is not available
-2. The script has collected all the git diff data
-3. **YOU (Claude) must now review the code directly**
-
-**Parse the script output:**
-
-- `diff` — The full git diff to review
-- `files` — List of changed files
-- `stat` — Diff stats (files changed, insertions, deletions)
-- `recentLog` — Recent commit messages for context
-- `projectContext` — CLAUDE.md content (if available)
-
-**Perform a structured code review covering:**
+Read the diff and review it covering these areas:
 
 #### Security
 - SQL injection, XSS, command injection, path traversal
@@ -137,14 +84,15 @@ If the script output includes `{ phase: "review_data", method: "claude-direct", 
 - Tests that don't actually assert anything meaningful
 - Flaky test patterns (timing, order-dependent)
 
-**Output format — use this exact structure:**
+### Step 4: Present Findings
+
+Use this format:
 
 ```
 ## Code Review Summary
 
-**Scope:** <scope description from script>
+**Scope:** <what was reviewed>
 **Files Reviewed:** <count>
-**Method:** Claude Direct Review
 
 ### 🔴 Critical Issues (<count>)
 
@@ -152,9 +100,9 @@ If the script output includes `{ phase: "review_data", method: "claude-direct", 
 **File:** `<path>:<line>`
 **Issue:** <description>
 **Fix:**
-```suggestion
+\`\`\`suggestion
 <suggested code fix>
-```
+\`\`\`
 
 ### 🟡 Warnings (<count>)
 
@@ -170,127 +118,68 @@ If the script output includes `{ phase: "review_data", method: "claude-direct", 
 **Suggestion:** <description>
 
 ### ✅ What Looks Good
-- <positive observation about the code>
+- <positive observation>
 
 ### Summary
 - **Critical:** <count> | **Warnings:** <count> | **Suggestions:** <count>
-- **Verdict:** <PASS / PASS WITH WARNINGS / NEEDS FIXES>
+- **Verdict:** PASS / PASS WITH WARNINGS / NEEDS FIXES
 ```
 
-**After completing the review**, update the tracking file:
+If no issues found, just say "Code looks clean" with a brief summary.
+
+### Step 5: Update Tracking File
+
+After review, create or update `.product/coderabbit-reviews.md`:
 
 ```bash
-# Read the current tracking file
-cat .product/coderabbit-reviews.md
+mkdir -p .product
 ```
 
-Update it with the actual review results (replace "Pending Claude analysis" with the real summary).
-
-### Step 4: Offer Next Actions
-
-After presenting the review, ask the user:
-
-1. **Fix issues** — "Would you like me to fix the critical issues?"
-2. **Re-review** — "Run the review again after fixes?"
-3. **Continue** — "Proceed to `/ship` or `/test`?"
-
-## Smart Change Detection (Auto Mode)
-
-When no `--type` flag is specified, the script auto-detects what to review:
-
-```
-┌─────────────────────────────────────────────┐
-│ Uncommitted changes exist?                   │
-│   YES + Unpushed commits? → Review ALL      │
-│   YES + No unpushed?      → Review UNCOMMITTED│
-│   NO                                         │
-│     ├─ Unpushed commits?  → Review COMMITTED │
-│     └─ No unpushed?                          │
-│         ├─ Changes since last review?        │
-│         │   → Review since last reviewed hash│
-│         └─ No changes? → "Nothing to review" │
-└─────────────────────────────────────────────┘
-```
-
-## Running with Specific Options
-
-```bash
-# Review only uncommitted changes
-node cr-review.mjs --type uncommitted
-
-# Review only committed changes
-node cr-review.mjs --type committed
-
-# Review everything
-node cr-review.mjs --type all
-
-# Review since a specific commit
-node cr-review.mjs --base-commit abc1234
-
-# Pass API key directly
-node cr-review.mjs --api-key <key>
-```
-
-## Tracking File (`.product/coderabbit-reviews.md`)
-
-The script automatically creates and updates this file. Format:
+**Format:**
 
 ```markdown
-# CodeRabbit Review Log
+# Code Review Log
 
 ## Last Review State
-- **Last Reviewed Commit:** `abc1234`
-- **Timestamp:** 2026-03-07 14:30
-- **Files Reviewed:** 12
-- **Review Scope:** Uncommitted changes (5 files)
-- **Review Method:** CodeRabbit CLI (v1.2.3) / Claude Direct Review
+- **Last Reviewed Commit:** `<hash>`
+- **Timestamp:** <date time>
+- **Files Reviewed:** <count>
 - **Status:** ✅ Clean / ⚠️ Issues Found
 
 ## Review History
 
-### 2026-03-07 14:30 — Review
-**Scope:** Uncommitted changes (5 files)
-**Method:** Claude Direct Review
-**Files Reviewed:** 5
-**Status:** ⚠️ Issues Found
-**Summary:** 1 critical, 2 warnings, 3 suggestions
-**Commit at time of review:** `abc1234`
+### <DATE> — Review
+**Scope:** <description>
+**Files Reviewed:** <count>
+**Status:** <result>
+**Summary:** <brief>
+**Commit:** `<hash>`
 ```
 
-This file enables the "since last review" feature — each subsequent review only covers NEW changes.
+Rules:
+- Always update "Last Review State" at the top
+- Prepend new entries to "Review History" (newest first)
+- Keep max 20 entries
+
+### Step 6: Offer Next Actions
+
+After presenting the review:
+
+1. **Fix issues** — "Want me to fix the critical issues?"
+2. **Re-review** — "Run review again after fixes?"
+3. **Continue** — "Proceed to `/test` or `/ship`?"
 
 ## Edge Cases
 
-### No Git Repository
-```
-⚠️ Not a git repository. Run `git init` first.
-```
+- **No git repo:** Tell user to run `git init`
+- **No commits:** Tell user to make first commit
+- **No changes at all:** "Nothing new to review"
+- **Very large diff (>100 files):** Suggest reviewing in batches
 
-### No Commits Yet
-```
-⚠️ No commits yet. Make your first commit before running a review.
-```
+## Integration
 
-### Very Large Diff (>100 files)
-Warn the user and suggest reviewing in batches:
-```
-⚠️ Large changeset: 150 files changed. Consider:
-1. Reviewing one feature branch at a time
-2. Using --type committed to review only committed changes
-3. Reviewing specific directories
-```
-
-### Script Not Found
-If the script path is not found, fall back to manual mode:
-1. Detect platform with: `node -e "console.log(process.platform)"`
-2. Collect diff manually with git commands
-3. Follow Path B (Claude Direct Review) steps above
-
-## Integration with Other Skills
-
-| After this skill... | Suggest... |
-|----|-----|
+| After... | Suggest... |
+|----------|-----------|
 | `/develop` or `/develop-flutter` | → `/review-with-code-rabbit` |
-| `/review-with-code-rabbit` (issues found) | → Fix issues, then re-review |
-| `/review-with-code-rabbit` (clean) | → `/test` then `/ship` |
-| `/test` | → `/review-with-code-rabbit` for non-test issues |
+| Review found issues | → Fix, then re-review |
+| Review clean | → `/test` then `/ship` |
