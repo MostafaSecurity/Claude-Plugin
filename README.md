@@ -4,7 +4,7 @@ A full virtual product team inside Claude Code. Covers the entire feature lifecy
 
 ## What You Get
 
-**12 Skills** (commands you type):
+**13 Skills** (commands you type):
 
 | Command | What It Does |
 |---------|-------------|
@@ -15,6 +15,7 @@ A full virtual product team inside Claude Code. Covers the entire feature lifecy
 | `/develop` | Implement a web feature across all layers (React + Node/Express). Respects existing conventions on legacy projects |
 | `/develop-flutter` | Implement a Flutter/Dart feature with Clean Architecture. Supports BLoC, Riverpod, and Provider |
 | `/test` | Write tests (unit, integration, E2E). On legacy projects: detects existing test framework and matches patterns |
+| `/review-with-code-rabbit` | AI-powered code review. Uses CodeRabbit CLI on macOS/Linux, Claude direct review on Windows. Tracks reviewed state |
 | `/ship` | Commit, push, deploy. On legacy projects: respects existing git workflow and CI/CD pipelines |
 | `/save-progress` | Save session state and update codebase cache for fast next session |
 | `/setup-infra` | Validate environment, CLI tools, database connection, and service credentials |
@@ -155,14 +156,21 @@ claude plugin list
 # Should show: feature-workflow@feature-workflow-marketplace
 ```
 
-To update later:
+To update later, **uninstall and reinstall** (marketplace update is not yet reliable):
 
 ```bash
-claude plugin marketplace update feature-workflow-marketplace
-claude plugin update feature-workflow
+# Remove old version
+claude plugin uninstall feature-workflow
+claude plugin marketplace remove feature-workflow-marketplace
+
+# Reinstall latest
+claude plugin marketplace add MostafaSecurity/Claude-Plugin
+claude plugin install --scope user feature-workflow
 ```
 
-This gives you all 12 skills listed above.
+> **Important:** Restart Claude Code after reinstalling for changes to take effect.
+
+This gives you all 13 skills listed above.
 
 ### Step 4: Install the Team Agents
 
@@ -537,12 +545,12 @@ Skills are designed to work together:
 
 **New project:**
 ```
-/init-project → /setup-infra → /resume → /use-case → /develop (or /develop-flutter) → /test → /ship → /deploy → /save-progress
+/init-project → /setup-infra → /resume → /use-case → /develop (or /develop-flutter) → /review-with-code-rabbit → /test → /ship → /deploy → /save-progress
 ```
 
 **Existing project:**
 ```
-/analyze-codebase → /init-project → /setup-infra → /resume → /use-case → /develop (or /develop-flutter) → /test → /ship → /deploy → /save-progress
+/analyze-codebase → /init-project → /setup-infra → /resume → /use-case → /develop (or /develop-flutter) → /review-with-code-rabbit → /test → /ship → /deploy → /save-progress
 ```
 
 | If this fails... | Run this to fix it |
@@ -559,6 +567,16 @@ Skills are designed to work together:
 
 **"Plugin not found" after install:**
 Restart Claude Code (`claude`) after installing the plugin.
+
+**Plugin update not working (`marketplace update` / `plugin update`):**
+The update commands may not pick up new skills. Use uninstall + reinstall instead:
+```bash
+claude plugin uninstall feature-workflow
+claude plugin marketplace remove feature-workflow-marketplace
+claude plugin marketplace add MostafaSecurity/Claude-Plugin
+claude plugin install --scope user feature-workflow
+```
+Then restart Claude Code.
 
 **"not found in any configured marketplace" during install:**
 You must register the marketplace first. Run `claude plugin marketplace add MostafaSecurity/Claude-Plugin` before `claude plugin install`.
